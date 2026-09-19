@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — {{ site_name }}{% endblock %}
+{% block meta_desc %}{{ post.summary[:160] }}{% endblock %}
+
+{% block content %}
+<div class="article-container">
+    <article>
+        <div class="article-header">
+            <a href="{{ url_for('category_page', slug=post.category) }}" class="card-category" style="font-size:0.85rem; padding:4px 14px;">
+                {{ category_map.get(post.category, {}).get('icon', '📰') }}
+                {{ category_map.get(post.category, {}).get('name', post.category) }}
+            </a>
+            <h1>{{ post.title }}</h1>
+            <div class="card-meta" style="font-size:0.9rem;">
+                <span>📅 {{ format_date(post.created_at) }}</span>
+                <span>👁️ {{ post.views }} বার পড়া হয়েছে</span>
+                {% if post.source_name %}
+                <span>📰 {{ post.source_name }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if post.image_url %}
+        <img src="{{ post.image_url }}" alt="{{ post.title }}" class="article-hero-img" loading="lazy"
+             onerror="this.style.display='none'">
+        {% endif %}
+
+        {% if post.summary %}
+        <div class="article-summary-box">
+            {{ post.summary }}
+        </div>
+        {% endif %}
+
+        <div class="article-body">
+            {{ render_body_markdown(post.body) | safe }}
+        </div>
+
+        {% if post.source_url %}
+        <div style="margin-top:20px; text-align:center;">
+            <a href="{{ post.source_url }}" target="_blank" rel="noopener" class="btn btn-outline">
+                🔗 মূল উৎস দেখুন
+            </a>
+        </div>
+        {% endif %}
+    </article>
+
+    <!-- Related Posts -->
+    {% if related %}
+    <section class="related-section">
+        <div class="section-header">
+            <h2 class="section-title">📖 সম্পর্কিত খবর</h2>
+        </div>
+        <div class="card-grid">
+            {% for rp in related %}
+            <article class="news-card">
+            {% if rp.image_url %}
+            <a href="{{ url_for('article', post_id=rp.id) }}">
+                <img src="{{ rp.image_url }}" alt="{{ rp.title }}" class="card-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'card-img placeholder cat-{{ rp.category }}\'>{{ category_map.get(rp.category, {}).get('icon', '📰') }}</div>'">
+            </a>
+            {% else %}
+            <div class="card-img placeholder cat-{{ rp.category }}">{{ category_map.get(rp.category, {}).get('icon', '📰') }}</div>
+            {% endif %}
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <a href="{{ url_for('article', post_id=rp.id) }}">{{ rp.title }}</a>
+                    </h3>
+                    <div class="card-meta">
+                        <span>{{ format_date(rp.created_at) }}</span>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Back Link -->
+    <div style="margin-top:30px; text-align:center;">
+        <a href="{{ url_for('home') }}" class="btn btn-outline">← হোমপেজে ফিরুন</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_desc %}{{ site_tagline }} — বাংলাদেশের সর্বশেষ খবর, আপডেট এবং বিশ্লেষণ{% endblock %}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
+        /* ── Reset & Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'SolaimanLipi', 'Kalpurush', 'Noto Sans Bengali', 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            color: #1a1a1a;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        a { color: #c0392b; text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #e74c3c; }
+        img { max-width: 100%; height: auto; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+        /* ── Header ── */
+        .site-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-area img { height: 42px; width: 42px; border-radius: 50%; border: 2px solid #e74c3c; }
+        .logo-area .site-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .logo-area .site-title:hover { color: #f1c40f; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .search-toggle {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .search-toggle:hover { background: rgba(255,255,255,0.2); }
+        .fb-link { color: #f1c40f; font-size: 0.85rem; }
+
+        /* ── Nav ── */
+        .nav-bar {
+            background: rgba(0,0,0,0.2);
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+        .nav-bar::-webkit-scrollbar { height: 3px; }
+        .nav-bar::-webkit-scrollbar-thumb { background: #e74c3c; border-radius: 3px; }
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        .nav-link {
+            display: inline-block;
+            padding: 10px 16px;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            border-bottom-color: #e74c3c;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* ── Search Overlay ── */
+        .search-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 120px;
+        }
+        .search-overlay.active { display: flex; }
+        .search-box {
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .search-box input:focus { border-color: #c0392b; outline: none; }
+
+        /* ── Content ── */
+        .main-content { min-height: 60vh; padding: 24px 0; }
+
+        /* ── Card Grid ── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .news-card {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .news-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #e0e0e0;
+        }
+        /* ── Placeholder images ── */
+        .card-img.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #fff;
+            min-height: 160px;
+        }
+        .card-img.placeholder.cat-bangladesh { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+        .card-img.placeholder.cat-international { background: linear-gradient(135deg, #2980b9, #3498db); }
+        .card-img.placeholder.cat-politics { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
+        .card-img.placeholder.cat-economy { background: linear-gradient(135deg, #d35400, #e67e22); }
+        .card-img.placeholder.cat-technology { background: linear-gradient(135deg, #2c3e50, #34495e); }
+        .card-img.placeholder.cat-sports { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+        .card-img.placeholder.cat-entertainment { background: linear-gradient(135deg, #e84393, #fd79a8); }
+        .card-img.placeholder.cat-education { background: linear-gradient(135deg, #00b894, #55efc4); color: #2d3436; }
+        .card-img.placeholder.cat-health { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+        .card-img.placeholder.cat-lifestyle { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+        .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
+        .card-category {
+            display: inline-block;
+            background: #e74c3c;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            width: fit-content;
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+        .card-title a { color: inherit; }
+        .card-title a:hover { color: #c0392b; }
+        .card-summary {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+            flex: 1;
+        }
+        .card-meta {
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-source { color: #c0392b; font-weight: 500; }
+
+        /* ── Section Header ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #c0392b;
+        }
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .section-more {
+            color: #c0392b;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* ── Hero ── */
+        .hero-section {
+            margin-bottom: 30px;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+        }
+        .hero-main {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            min-height: 400px;
+        }
+        .hero-main .hero-img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+        .hero-main .hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            padding: 30px 20px 20px;
+            color: #fff;
+        }
+        .hero-main .hero-overlay .card-category { background: #e74c3c; }
+        .hero-main .hero-overlay h2 {
+            font-size: 1.5rem;
+            line-height: 1.4;
+            margin-top: 8px;
+        }
+        .hero-main .hero-overlay h2 a { color: #fff; }
+        .hero-main .hero-overlay h2 a:hover { color: #f1c40f; }
+        .hero-main .hero-overlay .card-meta { color: rgba(255,255,255,0.7); margin-top: 10px; }
+        .hero-sidebar { display: flex; flex-direction: column; gap: 12px; }
+        .hero-side-card {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            height: 120px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .hero-side-card img { width: 120px; object-fit: cover; }
+        .hero-side-card .side-info { padding: 10px; flex: 1; }
+        .hero-side-card .side-info h4 {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+        .hero-side-card .side-info h4 a { color: #1a1a1a; }
+        .hero-side-card .side-info .card-meta { font-size: 0.75rem; }
+
+        /* ── Article Page ── */
+        .article-container { max-width: 800px; margin: 0 auto; }
+        .article-header { margin-bottom: 24px; }
+        .article-header h1 {
+            font-size: 2rem;
+            line-height: 1.4;
+            color: #1a1a2e;
+            margin-bottom: 12px;
+        }
+        .article-header .card-meta { margin-bottom: 16px; font-size: 0.9rem; }
+        .article-hero-img {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .article-body {
+            background: #fff;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            font-size: 1.08rem;
+            line-height: 1.9;
+            color: #2c2c2c;
+        }
+        .article-body p { margin-bottom: 18px; }
+        .article-body .article-subheading {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 32px 0 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e74c3c;
+            line-height: 1.4;
+        }
+        .article-body .article-subheading:first-child { margin-top: 0; }
+        .article-summary-box {
+            background: #f8f9fa;
+            border-left: 4px solid #c0392b;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            font-size: 1.05rem;
+            color: #333;
+            border-radius: 0 8px 8px 0;
+        }
+        .related-section { margin-top: 40px; }
+
+        /* ── Footer ── */
+        .site-footer {
+            background: #1a1a2e;
+            color: rgba(255,255,255,0.7);
+            padding: 40px 0 20px;
+            margin-top: 40px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .footer-col h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #c0392b;
+            display: inline-block;
+        }
+        .footer-col p, .footer-col a { font-size: 0.9rem; }
+        .footer-col a { color: rgba(255,255,255,0.7); display: block; margin-bottom: 6px; }
+        .footer-col a:hover { color: #f1c40f; }
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+        }
+
+        /* ── Misc ── */
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+        .badge-green { background: #d4edda; color: #155724; }
+        .badge-red { background: #f8d7da; color: #721c24; }
+        .badge-blue { background: #d1ecf1; color: #0c5460; }
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary { background: #c0392b; color: #fff; }
+        .btn-primary:hover { background: #e74c3c; color: #fff; }
+        .btn-outline { background: transparent; border: 2px solid #c0392b; color: #c0392b; }
+        .btn-outline:hover { background: #c0392b; color: #fff; }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        .empty-state .icon { font-size: 4rem; margin-bottom: 16px; }
+        .flash-msg {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        .flash-success { background: #d4edda; color: #155724; }
+        .flash-error { background: #f8d7da; color: #721c24; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero-grid { grid-template-columns: 1fr; }
+            .hero-main { min-height: auto; }
+            .hero-main .hero-img { height: 250px; }
+            .hero-main .hero-overlay h2 { font-size: 1.2rem; }
+            .hero-sidebar { flex-direction: column; }
+            .card-grid { grid-template-columns: 1fr; }
+            .article-header h1 { font-size: 1.5rem; }
+            .article-body { padding: 20px; font-size: 1rem; }
+            .logo-area .site-title { font-size: 1.1rem; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="header-top">
+            <a href="{{ url_for('home') }}" class="logo-area">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="{{ site_name }}">
+                <span class="site-title">{{ site_name }}</span>
+            </a>
+            <div class="header-actions">
+                <a href="{{ fb_page }}" target="_blank" class="fb-link">📘 ফেসবুক</a>
+                <button class="search-toggle" onclick="toggleSearch()">🔍</button>
+            </div>
+        </div>
+        <nav class="nav-bar">
+            <div class="nav-inner">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 হোম</a>
+                {% for cat in categories %}
+                <a href="{{ url_for('category_page', slug=cat.slug) }}" class="nav-link">{{ cat.icon }} {{ cat.name }}</a>
+                {% endfor %}
+                <a href="{{ url_for('about') }}" class="nav-link">ℹ️ আমাদের সম্পর্কে</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="if(event.target===this)toggleSearch()">
+        <div class="search-box">
+            <form action="{{ url_for('search') }}" method="get">
+                <input type="text" name="q" placeholder="খবর খুঁজুন..." autofocus autocomplete="off">
+            </form>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container" style="padding-top:16px;">
+        {% for cat, msg in messages %}
+        <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>{{ site_name }}</h3>
+                    <p>{{ site_tagline }}। বাংলাদেশ ও বিশ্বের সর্বশেষ খবর, বিশ্লেষণ এবং আপডেট পেতে আমাদের সাথে থাকুন।</p>
+                </div>
+                <div class="footer-col">
+                    <h3>ক্যাটাগরি</h3>
+                    {% for cat in categories %}
+                    <a href="{{ url_for('category_page', slug=cat.slug) }}">{{ cat.icon }} {{ cat.name }}</a>
+                    {% endfor %}
+                </div>
+                <div class="footer-col">
+                    <h3>লিংক</h3>
+                    <a href="{{ url_for('about') }}">আমাদের সম্পর্কে</a>
+                    <a href="{{ url_for('privacy') }}">গোপনীয়তা নীতি</a>
+                    <a href="{{ url_for('contact') }}">যোগাযোগ</a>
+                    <a href="{{ fb_page }}" target="_blank">ফেসবুক পেজ</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© ২০২৬ {{ site_name }} — সর্বস্বত্ব সংরক্ষিত | AI দিয়ে তৈরি</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleSearch() {
+            document.getElementById('searchOverlay').classList.toggle('active');
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') document.getElementById('searchOverlay').classList.remove('active');
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                toggleSearch();
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

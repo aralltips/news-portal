@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}অ্যাডমিন — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+    <h2>🛠️ অ্যাডমিন প্যানেল</h2>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline" style="font-size:0.85rem;">লগআউট</a>
+</div>
+
+<!-- Stats -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:30px;">
+    <div style="background:#fff; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <div style="font-size:2rem; font-weight:700; color:#c0392b;">{{ total_posts }}</div>
+        <div style="color:#666; font-size:0.9rem;">মোট পোস্ট</div>
+    </div>
+    <div style="background:#fff; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <div style="font-size:2rem; font-weight:700; color:#2980b9;">{{ total_views }}</div>
+        <div style="color:#666; font-size:0.9rem;">মোট ভিউ</div>
+    </div>
+    <div style="background:#fff; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <div style="font-size:2rem; font-weight:700;">
+            {% if agent_enabled %}
+            <span style="color:#27ae60;">চালু</span>
+            {% else %}
+            <span style="color:#e74c3c;">বন্ধ</span>
+            {% endif %}
+        </div>
+        <div style="color:#666; font-size:0.9rem;">এজেন্ট স্ট্যাটাস</div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; margin-bottom:30px;">
+    <!-- Run Agent -->
+    <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <h3 style="margin-bottom:12px;">🚀 এজেন্ট কন্ট্রোল</h3>
+        <form action="{{ url_for('admin_run_agent') }}" method="post" style="margin-bottom:10px;">
+            <button type="submit" class="btn btn-primary" style="width:100%;">⚡ এখনই নিউজ পোস্ট করুন</button>
+        </form>
+        <form action="{{ url_for('admin_toggle_agent') }}" method="post">
+            <button type="submit" class="btn btn-outline" style="width:100%;">
+                {% if agent_enabled %}⏸️ এজেন্ট বন্ধ করুন{% else %}▶️ এজেন্ট চালু করুন{% endif %}
+            </button>
+        </form>
+    </div>
+
+    <!-- Interval -->
+    <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <h3 style="margin-bottom:12px;">⏱️ সেটিংস</h3>
+        <form action="{{ url_for('admin_update_interval') }}" method="post">
+            <label style="display:block; margin-bottom:6px; font-weight:500;">এজেন্ট ব্যবধান (মিনিট):</label>
+            <div style="display:flex; gap:8px;">
+                <input type="number" name="interval" value="{{ agent_interval }}" min="5" max="120"
+                       style="flex:1; padding:10px; border:2px solid #ddd; border-radius:8px; font-family:inherit;">
+                <button type="submit" class="btn btn-primary">সেট করুন</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Stats -->
+<div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:30px;">
+    <h3 style="margin-bottom:12px;">📊 ক্যাটাগরি অনুযায়ী পোস্ট</h3>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px;">
+        {% for row in cat_counts %}
+        <div style="padding:10px; background:#f8f9fa; border-radius:8px; text-align:center;">
+            <div style="font-weight:700; font-size:1.2rem; color:#1a1a2e;">{{ row.cnt }}</div>
+            <div style="font-size:0.85rem; color:#666;">{{ category_map.get(row.category, {}).get('name', row.category) }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Agent Logs -->
+<div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <h3 style="margin-bottom:12px;">📋 সাম্প্রতিক লগ</h3>
+    <div style="max-height:400px; overflow-y:auto; font-family:monospace; font-size:0.85rem; background:#1a1a2e; color:#0f0; padding:16px; border-radius:8px; line-height:1.8;">
+        {% for log in logs %}
+        <div>{{ log.message }}</div>
+        {% endfor %}
+        {% if not logs %}
+        <div style="color:#888;">কোনো লগ নেই</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

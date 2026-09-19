@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} — {{ site_tagline }}{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+{% if hero_posts %}
+<section class="hero-section">
+    <div class="hero-grid">
+        {% set hero_main = hero_posts[0] %}
+        <a href="{{ url_for('article', post_id=hero_main.id) }}" class="hero-main">
+            {% if hero_main.image_url %}
+            <img src="{{ hero_main.image_url }}" alt="{{ hero_main.title }}" class="hero-img" loading="lazy" onerror="this.onerror=null; this.style.background='linear-gradient(135deg, #667eea, #764ba2)';">
+            {% endif %}
+            <div class="hero-overlay">
+                <span class="card-category">{{ category_map.get(hero_main.category, {}).get('name', hero_main.category) }}</span>
+                <h2>{{ hero_main.title }}</h2>
+                <div class="card-meta">
+                    <span>{{ format_date(hero_main.created_at) }}</span>
+                    <span>{{ hero_main.views }} বার পড়া হয়েছে</span>
+                </div>
+            </div>
+        </a>
+        <div class="hero-sidebar">
+            {% for hp in hero_posts[1:3] %}
+            <a href="{{ url_for('article', post_id=hp.id) }}" class="hero-side-card">
+        {% if hp.image_url %}
+        <img src="{{ hp.image_url }}" alt="{{ hp.title }}" loading="lazy" onerror="this.onerror=null; this.style.background='linear-gradient(135deg, #667eea, #764ba2)'; this.style.minHeight='100px'; this.alt='{{ category_map.get(hp.category, {}).get('icon', '📰') }}'">
+        {% endif %}
+                <div class="side-info">
+                    <span class="card-category">{{ category_map.get(hp.category, {}).get('name', hp.category) }}</span>
+                    <h4>{{ hp.title[:80] }}{% if hp.title|length > 80 %}…{% endif %}</h4>
+                    <div class="card-meta"><span>{{ format_date(hp.created_at) }}</span></div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Latest News -->
+<section style="margin-bottom: 40px;">
+    <div class="section-header">
+        <h2 class="section-title">📰 সর্বশেষ খবর</h2>
+    </div>
+    <div class="card-grid">
+        {% for post in latest_posts %}
+        <article class="news-card">
+            {% if post.image_url %}
+            <a href="{{ url_for('article', post_id=post.id) }}">
+                <img src="{{ post.image_url }}" alt="{{ post.title }}" class="card-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'card-img placeholder cat-{{ post.category }}\'>{{ category_map.get(post.category, {}).get('icon', '📰') }}</div>'">
+            </a>
+            {% else %}
+            <div class="card-img placeholder cat-{{ post.category }}">{{ category_map.get(post.category, {}).get('icon', '📰') }}</div>
+            {% endif %}
+            <div class="card-body">
+                <span class="card-category">{{ category_map.get(post.category, {}).get('name', post.category) }}</span>
+                <h3 class="card-title">
+                    <a href="{{ url_for('article', post_id=post.id) }}">{{ post.title }}</a>
+                </h3>
+                <p class="card-summary">{{ post.summary[:150] }}{% if post.summary|length > 150 %}…{% endif %}</p>
+                <div class="card-meta">
+                    <span>{{ format_date(post.created_at) }}</span>
+                    <span class="card-source">{{ post.source_name }}</span>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Category Sections -->
+{% for slug, section in category_sections.items() %}
+<section style="margin-bottom: 40px;">
+    <div class="section-header">
+        <h2 class="section-title">{{ section.info.icon }} {{ section.info.name }}</h2>
+        <a href="{{ url_for('category_page', slug=slug) }}" class="section-more">আরও দেখুন →</a>
+    </div>
+    <div class="card-grid">
+        {% for post in section.posts %}
+        <article class="news-card">
+        {% if post.image_url %}
+        <a href="{{ url_for('article', post_id=post.id) }}">
+            <img src="{{ post.image_url }}" alt="{{ post.title }}" class="card-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'card-img placeholder cat-{{ post.category }}\'>{{ section.info.icon }}</div>'">
+        </a>
+        {% else %}
+        <div class="card-img placeholder cat-{{ post.category }}">{{ section.info.icon }}</div>
+        {% endif %}
+            <div class="card-body">
+                <h3 class="card-title">
+                    <a href="{{ url_for('article', post_id=post.id) }}">{{ post.title }}</a>
+                </h3>
+                <div class="card-meta">
+                    <span>{{ format_date(post.created_at) }}</span>
+                    <span class="card-source">{{ post.source_name }}</span>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+
+{% if not latest_posts %}
+<div class="empty-state">
+    <div class="icon">📰</div>
+    <h3>এখনো কোনো খবর নেই</h3>
+    <p>AI এজেন্ট শীঘ্রই খবর সংগ্রহ করবে। কিছুক্ষণ অপেক্ষা করুন!</p>
+</div>
+{% endif %}
+
+{% endblock %}

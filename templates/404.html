@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}পাতাটি পাওয়া যায়নি — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="empty-state">
+    <div class="icon">🔍</div>
+    <h3>৪০৪ — পাতাটি পাওয়া যায়নি</h3>
+    <p>আপনি যে পাতাটি খুঁজছেন সেটি নেই বা সরিয়ে ফেলা হয়েছে।</p>
+    <br>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">← হোমপেজে ফিরুন</a>
+</div>
+{% endblock %}

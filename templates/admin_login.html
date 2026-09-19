@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}অ্যাডমিন লগইন — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:400px; margin:60px auto;">
+    <div style="background:#fff; padding:32px; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+        <h2 style="text-align:center; margin-bottom:24px;">🔐 অ্যাডমিন লগইন</h2>
+        <form method="post">
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600;">পাসওয়ার্ড</label>
+                <input type="password" name="password" required autofocus
+                       style="width:100%; padding:12px; font-size:1rem; border:2px solid #ddd; border-radius:8px; font-family:inherit;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; padding:14px;">লগইন</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
