@@ -71,13 +71,28 @@ def is_configured():
     ])
 
 
+def _download_image_as_base64(image_url):
+    """Download image and convert to base64 data URI."""
+    try:
+        req = urllib.request.Request(image_url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        })
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = resp.read()
+            ct = resp.headers.get("Content-Type", "image/jpeg")
+            import base64
+            b64 = base64.b64encode(data).decode()
+            return f"data:{ct};base64,{b64}"
+    except Exception as e:
+        print(f"[Blogger] Image download failed: {e}")
+        return None
+
+
 def _build_html(title, summary, body, image_url, source_name, source_url, category):
     """Build Blogger-friendly HTML from article content."""
-    # Convert ## subheadings to <h3>
     import re
     body_html = body
-    body_html = re.sub(r'## (.+)', r'<h3 style="color:#d63031;font-size:1.2em;margin:20px 0 10px;">\1</h3>', body_html)
-    # Convert newlines to paragraphs
+    body_html = re.sub(r'## (.+)', r'<h3 style="color:#c0392b;font-size:1.2em;margin:20px 0 10px;font-weight:700;">\1</h3>', body_html)
     paragraphs = [p.strip() for p in body_html.split('\n\n') if p.strip()]
     body_html = ""
     for p in paragraphs:
@@ -99,10 +114,15 @@ def _build_html(title, summary, body, image_url, source_name, source_url, catego
     emoji = cat_emojis.get(category, '📰')
     cat_name = cat_names.get(category, category)
 
+    # Image HTML - use direct URL (Blogger will pick it up as thumbnail)
+    img_html = ""
+    if image_url and image_url.startswith("http"):
+        img_html = f'<img src="{image_url}" style="width:100%;border-radius:12px;margin-bottom:20px;" />'
+
     html = f"""
 <div style="max-width:720px;margin:0 auto;font-family:'Noto Sans Bengali',sans-serif;">
 
-{f'<img src="{image_url}" style="width:100%;border-radius:12px;margin-bottom:20px;" />' if image_url else ''}
+{img_html}
 
 <div style="background:#f0f4f8;padding:16px 20px;border-radius:10px;border-left:4px solid #c0392b;margin-bottom:24px;">
 <p style="margin:0;font-size:17px;line-height:1.7;color:#333;">{summary}</p>
@@ -128,20 +148,11 @@ def _clean_title(title):
     """Remove source names from title for Blogger display."""
     import re
     clean = title.strip()
-    
-    # Remove everything after common delimiters: - | — – :
-    # Pattern: " - SourceName" or " | SourceName" or " — SourceName"
-    # Match last occurrence of delimiter followed by likely source name
-    clean = re.sub(r'\s*[\|]\s*.*$', '', clean)  # Remove everything after |
-    clean = re.sub(r'\s*[-–—:]\s*[\w\s\.]+$,', '', clean)  # Remove "- Source" at end
+    clean = re.sub(r'\s*[\|]\s*.*$', '', clean)
+    clean = re.sub(r'\s*[-–—:]\s*[\w\s\.]+$,', '', clean)
     clean = re.sub(r'\s*[-–—]\s*(প্রথম আলো|BBC|NTV|BSS|RTV|Channel|Daily|Sangbad|সমকাল|ইনকিলাব|যুগান্তর|দৈনিক|Inqilab|Bhorer|Bangladesh|Prothom|Alo|News|net|com|Gramer|Kagoj|Share|Bazar|শেয়ার|বিজ|খবর|সংবাদ|সংস্থা|বাসস|গ্রামের|কাগজ|জাতীয়).*$', '', clean, flags=re.IGNORECASE)
-    
-    # Aggressive: remove anything after " - " or " | " that looks like a source
     clean = re.sub(r'\s+[-]\s+[A-Za-z\u0980-\u09FF\s\.]+$', '', clean)
-    
-    # Remove trailing pipes, dashes
     clean = re.sub(r'\s*[\|–—-]\s*$', '', clean).strip()
-    
     return clean if clean and len(clean) > 10 else title.strip()
 
 
@@ -160,10 +171,6 @@ def publish_post(title, summary, body, image_url="", category="bangladesh",
         "content": html,
         "labels": [category, "AI News"],
     }
-
-    # Set featured image
-    if image_url and image_url.startswith("http"):
-        post_body["images"] = [{"url": image_url}]
 
     result = _api_call("POST", f"/blogs/{BLOGGER_BLOG_ID}/posts", post_body)
     if result and "url" in result:
