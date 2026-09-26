@@ -591,6 +591,24 @@ def _ai_rewrite(title, original_text, category_name):
 
 # ── Main Agent Logic ───────────────────────────────────
 
+def _is_recent(published_str, max_days=2):
+    """Check if an article is from the last N days."""
+    if not published_str:
+        return True  # If no date, include it (could be fresh)
+    try:
+        from email.utils import parsedate_to_datetime
+        try:
+            pub_date = parsedate_to_datetime(published_str)
+        except Exception:
+            # Try ISO format
+            pub_date = datetime.fromisoformat(published_str.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        age = now - pub_date
+        return age.days <= max_days
+    except Exception:
+        return True  # If can't parse, include it
+
+
 def _process_items(items, source_label="RSS"):
     posted = 0
     for item in items:
@@ -605,6 +623,12 @@ def _process_items(items, source_label="RSS"):
         default_cat = item.get("default_cat", "bangladesh")
 
         if not title or not url:
+            continue
+
+        # SKIP old articles - only process recent (last 2 days)
+        published = item.get("published", "")
+        if published and not _is_recent(published, max_days=2):
+            _log(f"⏭ Skip old: {title[:50]}... ({published[:10]})")
             continue
 
         url_hash = _hash(url)
@@ -715,6 +739,14 @@ def run_agent(seed=False):
             time.sleep(1)
 
         _log(f"🏁 Agent run complete: {total_posted} new posts")
+
+        # Clean old posts (older than 7 days)
+        try:
+            db.delete_old_posts(days=90)
+            _log("🧹 Cleaned posts older than 90 days")
+        except Exception as e:
+            _log(f"⚠️ Cleanup error: {e}")
+
         return {"status": "ok", "posted": total_posted}
 
     except Exception as e:
